@@ -1,0 +1,146 @@
+<html>
+  <head>
+    <style>canvas{border: 1px solid;}</style>
+  </head>
+  <body style="background-color: black;">
+    <canvas id="screen" width="512" height="512"></canvas>
+  </body>
+  <script>
+    var canvas = document.getElementById('screen');
+    var cxt = canvas.getContext('2d');
+    var move = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+    var rows = 32, cols = 32;
+    var snakes = [];
+    var foodLimit = 10;
+    var foods = [];
+    function shuffle(o){ //v1.0
+      for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+      return o;
+    };
+    function rec(x1, y1, x2, y2, color) {
+      cxt.beginPath();
+      cxt.rect(x1, y1, x2 - x1, y2 - y1);
+      cxt.fillStyle = color;
+      cxt.fill();
+      cxt.strokeStyle = 'rgba(0, 0, 0, 0)';
+      cxt.stroke();
+    };
+    function drawPart(part, color) {
+      var y = part.x, x = part.y;
+      rec(x * 16 + 1, y * 16 + 1, x * 16 + 15, y * 16 + 15, color);
+    };
+    function drawFood(part) {
+      cxt.beginPath();
+      cxt.arc(part.y * 16 + 8, part.x * 16 + 8, 4, 0, 2 * Math.PI, false);
+      cxt.fillStyle = 'rgb(41, 42, 38)';
+      cxt.fill();
+      cxt.strokeStyle = 'rgba(0, 0, 0, 0)';
+      cxt.stroke();
+    };
+    function Part(x, y) {
+      this.x = x;
+      this.y = y;
+    };
+    function Snake(x, y, key, no) {
+      this.directory = 3;
+      this.holdDirectory = -1;
+      this.parts = [];
+      this.develop = 0;
+      this.key = key;
+      this.life = 50;
+      this.no = no;
+      this.parts.push(new Part(x, y));
+      this.parts.push(new Part(x, y + 1));
+    };
+    Snake.prototype.move = function() {
+      if (this.life == 0)
+        return;
+      if (this.holdDirectory != -1) {
+        var nx = this.parts[0].x + move[this.holdDirectory][0];
+        var ny = this.parts[0].y + move[this.holdDirectory][1];
+        if (!collision(nx, ny)) {
+          this.directory = this.holdDirectory;
+          this.holdDirectory = -1;
+        }
+      }
+      var nx = this.parts[0].x + move[this.directory][0];
+      var ny = this.parts[0].y + move[this.directory][1];
+      if (!collision(nx, ny)) {
+        var fid = collisionFood(nx, ny);
+        if (fid) {
+          this.develop++;
+          foods.splice(fid, 1);
+        }
+        if (this.life < 50)
+          this.life++;
+        this.parts.unshift(new Part(nx, ny));
+        if (this.develop > 0)
+          this.develop--;
+        else
+          this.parts.pop();
+      }
+      else 
+        this.life--;
+    };
+    function draw() {
+      rec(0, 0, 512, 512, 'rgb(154, 207, 130)');
+      snakes.forEach(function(snake) {
+        for (var j = 0; j < snake.parts.length; j++) {
+          if (snake.life > 0)
+            drawPart(snake.parts[j], 'rgb(41, 42, 38)');
+          else
+            drawPart(snake.parts[j], 'gray');            
+        }
+      });
+      foods.forEach(function(food) {drawFood(food)});
+    };
+    snakes.push(new Snake(rows / 4, cols / 4, [38, 39, 40, 37], 1));
+    snakes.push(new Snake(rows - rows / 4, cols - cols / 4, [87, 68, 83, 65], 2));
+    snakes.push(new Snake(rows - rows / 4, cols / 4, [84, 72, 71, 70], 3));
+    function doKey(e) {
+      var ev = e || window.event; 
+      var obj = ev.target || ev.srcElement;
+      var t = obj.type || obj.getAttribute('type');
+      snakes.forEach(function(snake) {
+        for (var j = 0; j < 4; j++)
+          if (ev.keyCode == snake.key[j]){
+            snake.holdDirectory = j;
+            return false;
+          }
+      });
+    };
+    document.onkeydown = doKey;
+    function collision(x, y) {
+      if (x < 0 || x >= rows || y < 0 || y >= cols)
+        return true;
+      for (var i = 0; i < snakes.length; i++)
+        for (var j = 0; j < snakes[i].parts.length; j++)
+          if (snakes[i].parts[j].x == x && snakes[i].parts[j].y == y)
+            return true;
+      return false;
+    };
+    function collisionFood(x, y) {
+      for (var i = 0; i < foods.length; i++)
+        if (foods[i].x == x && foods[i].y == y)
+          return i;
+      return false;
+    };
+    function generateFood() {
+      while (foods.length < foodLimit) {
+        var x, y;
+        do {
+          x = Math.floor(Math.random() * rows);
+          y = Math.floor(Math.random() * cols);
+        } while (collision(x, y) || collisionFood(x, y));
+        foods.push(new Part(x, y));
+      }
+    };
+    function daemon() {
+      generateFood();
+      shuffle(snakes);
+      snakes.forEach(function(snake) {snake.move()});
+      draw();
+    };
+    setInterval(daemon, 100);
+  </script>
+</html>
