@@ -37,6 +37,20 @@
       cxt.strokeStyle = 'rgba(0, 0, 0, 0)';
       cxt.stroke();
     };
+    function drawHead(snake) {
+      var x = snake.parts[0].y, y = snake.parts[0].x;
+      if (snake.no == 1)
+        rec(x * 16 + 7, y * 16 + 7, x * 16 + 9, y * 16 + 9, 'white');
+      else if (snake.no == 2) {
+        rec(x * 16 + 7, y * 16 + 5, x * 16 + 9, y * 16 + 7, 'white');
+        rec(x * 16 + 7, y * 16 + 9, x * 16 + 9, y * 16 + 11, 'white');
+      }
+      else {
+        rec(x * 16 + 7, y * 16 + 3, x * 16 + 9, y * 16 + 5, 'white');
+        rec(x * 16 + 7, y * 16 + 7, x * 16 + 9, y * 16 + 9, 'white');
+        rec(x * 16 + 7, y * 16 + 11, x * 16 + 9, y * 16 + 13, 'white');        
+      }
+    }
     function Part(x, y) {
       this.x = x;
       this.y = y;
@@ -91,6 +105,7 @@
           else
             drawPart(snake.parts[j], 'gray');            
         }
+        drawHead(snake);
       });
       foods.forEach(function(food) {drawFood(food)});
     };
